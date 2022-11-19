@@ -17,34 +17,54 @@ from PySide2.QtCore import *
 from PySide2.QtGui import QIntValidator
 from PySide2.QtWidgets import *
 
-from matplotlib.backends.backend_qt5agg import (FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
+from matplotlib.backends.backend_qt5agg import (FigureCanvas, NavigationToolbar2QT as
+NavigationToolbar)
 from matplotlib.figure import Figure
 
 
 class Ui_MainWindow(object):
+
+    def __init__(self):
+        self.started = False
+        self.ax1 = None
+        self.ax2 = None
+        self._timer_common = None
+        self._timer1 = None
+        self._timer2 = None
+        self.common_canvas: FigureCanvas
+
     def on_click_reset(self):
-        self._timer1.stop()
-        self._timer2.stop()
+        self.stop()
         self.lineEdit.setText("10")
-        self.chb_side_by_side.setCheckState(Qt.Checked)
+        self.chb_side_by_side.setCheckState(Qt.Unchecked)
         self.clear_axes()
+        # self.common_canvas.clear_canvas # TODO
 
     def on_click_go(self):
         self._timer1.interval = self.lineEdit.text()
+
+    def stop(self):
+        self.started = False
+        if self._timer1:
+            self._timer1.stop()
+        if self._timer2:
+            self._timer2.stop()
+        if self._timer_common:
+            self._timer_common.stop()
 
     def start(self):
         # Set up a Line2D.
         # self._line1, = self.ax1.plot(np.linspace(0, 1, int(time.time())),
         #                                     np.sin(np.linspace(0, 1, int(time.time()))))
-
+        self.started = True
         if self.chb_side_by_side.isChecked():
             self.ax1 = self.dual_canvas1.figure.subplots()
             self.ax2 = self.dual_canvas2.figure.subplots()
             t = np.linspace(0, 10, 101)
             self._line1, = self.ax1.plot(t, np.sin(t + time.time()))
             self._line2, = self.ax2.plot(t, np.cos(t + time.time()))
-            self._timer1 = self.dual_canvas1.new_timer(50)
-            self._timer2 = self.dual_canvas2.new_timer(50)
+            self._timer1 = self.dual_canvas1.new_timer(1000)
+            self._timer2 = self.dual_canvas2.new_timer(1000)
             self._timer1.add_callback(self._update_canvas)
             self._timer2.add_callback(self._update_canvas2)
             self._timer1.start()
@@ -54,12 +74,9 @@ class Ui_MainWindow(object):
             t = np.linspace(0, 10, 101)
             self._line1, = self.ax1.plot(t, np.sin(t + time.time()))
             self._line2, = self.ax1.plot(t, np.cos(t + time.time()))
-            self._timer1 = self.dual_canvas1.new_timer(50)
-            self._timer2 = self.dual_canvas2.new_timer(50)
-            self._timer1.add_callback(self._update_canvas)
-            self._timer2.add_callback(self._update_canvas2)
-            self._timer1.start()
-            self._timer2.start()
+            self._timer_common = self.common_canvas.new_timer(1000)
+            self._timer_common.add_callback(self._update_canvas_common)
+            self._timer_common.start()
 
     def _update_canvas(self):
         t = np.linspace(0, 10, 101)
@@ -71,12 +88,19 @@ class Ui_MainWindow(object):
         self._line2.set_data(t, np.cos(t + time.time()))
         self._line2.figure.canvas.draw()
 
+    def _update_canvas_common(self):
+        t = np.linspace(0, 10, 101)
+        self._line1.set_data(t, np.sin(t + time.time()))
+        self._line2.set_data(t, np.cos(t + time.time()))
+        self._line1.figure.canvas.draw()
+        self._line2.figure.canvas.draw()
+
     def create_graphs(self):
         self.side_by_side_change()
 
     def side_by_side_change(self):
+        self.stop()
         # Has been unchecked -> user wants only one plot.
-        print("SHEESH")
         if not self.chb_side_by_side.isChecked():
             # Remove charts.
             if self.dual_canvas1:
@@ -105,8 +129,10 @@ class Ui_MainWindow(object):
             self.horizontalLayout.addWidget(self.dual_canvas2)
 
     def clear_axes(self):
-        self.ax1.cla()
-        self.ax2.cla()
+        if self.ax1:
+            self.ax1.cla()
+        if self.ax2:
+            self.ax2.cla()
 
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
@@ -128,8 +154,13 @@ class Ui_MainWindow(object):
 
         self.startButton = QPushButton(self.centralwidget)
         self.startButton.setObjectName(u"startButton")
-        self.startButton.setGeometry(QRect(160, 10, 60, 25))
+        self.startButton.setGeometry(QRect(150, 10, 60, 25))
         self.startButton.clicked.connect(self.start)
+
+        self.stopButton = QPushButton(text="Stop", parent=self.centralwidget)
+        self.stopButton.setObjectName(u"startButton")
+        self.stopButton.setGeometry(QRect(220, 10, 60, 25))
+        self.stopButton.clicked.connect(self.stop)
 
         self.horizontalLayoutWidget = QWidget(self.centralwidget)
         self.horizontalLayoutWidget.setObjectName(u"horizontalLayoutWidget")
@@ -151,7 +182,7 @@ class Ui_MainWindow(object):
         self.chb_side_by_side = QCheckBox(self.centralwidget)
         self.chb_side_by_side.setObjectName(u"checkBox")
         self.chb_side_by_side.setGeometry(QRect(350, 10, 111, 23))
-        self.chb_side_by_side.setCheckState(Qt.Checked)
+        self.chb_side_by_side.setCheckState(Qt.Unchecked)
         self.chb_side_by_side.toggled.connect(self.side_by_side_change)
 
         self.create_graphs()
