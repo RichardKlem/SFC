@@ -34,10 +34,10 @@ class Ui_MainWindow(object):
         self.common_canvas: FigureCanvas
 
     def on_click_reset(self):
-        self.stop()
+        # self.stop()
         self.lineEdit.setText("10")
-        self.chb_side_by_side.setCheckState(Qt.Unchecked)
-        self.clear_axes()
+        self.side_by_side_change()
+        # self.clear_axes()
         # self.common_canvas.clear_canvas # TODO
 
     def on_click_go(self):
@@ -100,27 +100,14 @@ class Ui_MainWindow(object):
 
     def side_by_side_change(self):
         self.stop()
-        # Has been unchecked -> user wants only one plot.
+        self.clear_axes()
         if not self.chb_side_by_side.isChecked():
-            # Remove charts.
-            if self.dual_canvas1:
-                self.horizontalLayout.removeWidget(self.dual_canvas1)
-                self.dual_canvas1.deleteLater()
-                self.dual_canvas1 = None
-            if self.dual_canvas2:
-                self.horizontalLayout.removeWidget(self.dual_canvas2)
-                self.dual_canvas2.deleteLater()
-                self.dual_canvas2 = None
             # Create single chart
             if self.common_canvas is None:
                 self.common_canvas = FigureCanvas(Figure(figsize=(5, 3)))
             self.horizontalLayout.addWidget(self.common_canvas)
-        # Has been checked -> user wants two plots.
+        # checked -> user wants two plots.
         else:
-            if self.common_canvas:
-                self.horizontalLayout.removeWidget(self.common_canvas)
-                self.common_canvas.deleteLater()
-                self.common_canvas = None
             if self.dual_canvas1 is None:
                 self.dual_canvas1 = FigureCanvas(Figure(figsize=(5, 3)))
             if self.dual_canvas2 is None:
@@ -129,10 +116,19 @@ class Ui_MainWindow(object):
             self.horizontalLayout.addWidget(self.dual_canvas2)
 
     def clear_axes(self):
-        if self.ax1:
-            self.ax1.cla()
-        if self.ax2:
-            self.ax2.cla()
+        # Remove charts.
+        if self.dual_canvas1:
+            self.horizontalLayout.removeWidget(self.dual_canvas1)
+            self.dual_canvas1.deleteLater()
+            self.dual_canvas1 = None
+        if self.dual_canvas2:
+            self.horizontalLayout.removeWidget(self.dual_canvas2)
+            self.dual_canvas2.deleteLater()
+            self.dual_canvas2 = None
+        if self.common_canvas:
+            self.horizontalLayout.removeWidget(self.common_canvas)
+            self.common_canvas.deleteLater()
+            self.common_canvas = None
 
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
