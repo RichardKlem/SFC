@@ -2,7 +2,6 @@
 # E.g. [2,3,2] is NN with 2 input neurons, one hidden layer of 3 neurons and 2 output neurons.
 LAYERS = [2, 3, 2]
 
-
 import numpy as np  # import numpy library
 
 
@@ -51,7 +50,7 @@ class LinearLayer:
         self.params = initialize_parameters(input_shape[0], n_out,
                                             ini_type)  # initialize weights and bias
         self.Z = np.zeros(
-                (self.params['W'].shape[0], input_shape[1]))  # create space for resultant Z output
+                (self.params['W'].shape[0], input_shape[1]))  # create space for resultant x output
 
     def forward(self, A_prev):
         self.A_prev = A_prev  # store the Activations/Training Data coming in
@@ -76,3 +75,21 @@ class LinearLayer:
 
         self.params['W'] = self.params['W'] - learning_rate * self.dW  # update weights
         self.params['b'] = self.params['b'] - learning_rate * self.db  # update bias(es)
+
+
+class Linear:
+    def __init__(self, n_in, n_out):
+        self.grad_w = None
+        self.grad_b = None
+        self.old_x = None
+        self.weights = np.random.randn(n_in, n_out) * np.sqrt(2 / n_in)
+        self.biases = np.zeros(n_out)
+
+    def forward(self, x):
+        self.old_x = x
+        return np.dot(x, self.weights) + self.biases
+
+    def backward(self, grad):
+        self.grad_b = grad.mean(axis=0)
+        self.grad_w = (np.matmul(self.old_x[:, :, None], grad[:, None, :])).mean(axis=0)
+        return np.dot(grad, self.weights.transpose())
