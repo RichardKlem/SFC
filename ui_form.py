@@ -75,10 +75,10 @@ class Ui_MainWindow(object):
                         cost=CCE())
         if full:
             data_train_file = ".data_train.pickle"
-            data_test_file = ".data_train.pickle"
+            data_test_file = ".data_test.pickle"
         else:
             data_train_file = ".data_train_small.pickle"
-            data_test_file = ".data_train_small.pickle"
+            data_test_file = ".data_test_small.pickle"
 
         ys, ys_opt = [], []
 
