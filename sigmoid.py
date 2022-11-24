@@ -1,7 +1,7 @@
 import numpy as np  # import numpy library
 
 
-class SigmoidLayer:
+class Sigmoid:
     def __init__(self, shape=None):
         self.dx = None
         self.old_y = np.zeros(shape) if shape else None

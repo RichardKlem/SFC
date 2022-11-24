@@ -21,10 +21,22 @@ from matplotlib.backends.backend_qt5agg import (FigureCanvas, NavigationToolbar2
 NavigationToolbar)
 from matplotlib.figure import Figure
 
+from cce import CrossEntropy as CCE
+from linear import Linear
+from model import Model
+from sigmoid import Sigmoid
+from softmax import Softmax
+from train import run
+
 
 class Ui_MainWindow(object):
 
     def __init__(self):
+        self.common_canvas = None
+        self.dual_canvas1 = None
+        self._line1 = None
+        self._line2 = None
+        self.dual_canvas2 = None
         self.started = False
         self.ax1 = None
         self.ax2 = None
@@ -32,16 +44,18 @@ class Ui_MainWindow(object):
         self._timer1 = None
         self._timer2 = None
         self.common_canvas: FigureCanvas
+        self.xs = []
+        self.ys = []
 
     def on_click_reset(self):
         # self.stop()
-        self.lineEdit.setText("10")
+        self.itersLineEdit.setText("10")
         self.side_by_side_change()
         # self.clear_axes()
         # self.common_canvas.clear_canvas # TODO
 
     def on_click_go(self):
-        self._timer1.interval = self.lineEdit.text()
+        self._timer1.interval = self.itersLineEdit.text()
 
     def stop(self):
         self.started = False
@@ -53,6 +67,21 @@ class Ui_MainWindow(object):
             self._timer_common.stop()
 
     def start(self):
+        iters = int(self.itersLineEdit.text())
+        full = False
+        alfa = 0.001
+        net = Model([Linear(784, 20), Sigmoid(), Linear(20, 10), Softmax()], opt=None, cost=CCE())
+        net_opt = Model([Linear(784, 20), Sigmoid(), Linear(20, 10), Softmax()], opt="amsgrad",
+                        cost=CCE())
+        if full:
+            data_train_file = ".data_train.pickle"
+            data_test_file = ".data_train.pickle"
+        else:
+            data_train_file = ".data_train_small.pickle"
+            data_test_file = ".data_train_small.pickle"
+
+        ys, ys_opt = [], []
+
         # Set up a Line2D.
         # self._line1, = self.ax1.plot(np.linspace(0, 1, int(time.time())),
         #                                     np.sin(np.linspace(0, 1, int(time.time()))))
@@ -60,40 +89,44 @@ class Ui_MainWindow(object):
         if self.chb_side_by_side.isChecked():
             self.ax1 = self.dual_canvas1.figure.subplots()
             self.ax2 = self.dual_canvas2.figure.subplots()
-            t = np.linspace(0, 10, 101)
-            self._line1, = self.ax1.plot(t, np.sin(t + time.time()))
-            self._line2, = self.ax2.plot(t, np.cos(t + time.time()))
-            self._timer1 = self.dual_canvas1.new_timer(1000)
-            self._timer2 = self.dual_canvas2.new_timer(1000)
-            self._timer1.add_callback(self._update_canvas)
-            self._timer2.add_callback(self._update_canvas2)
-            self._timer1.start()
-            self._timer2.start()
+            for i in range(1, iters):
+                xs = range(i)
+                y, y_opt, val, val_opt = run(net, net_opt, data_train_file, data_test_file, alfa)
+                ys.append(y)
+                ys_opt.append(y_opt)
+                self._line1, = self.ax1.plot(xs, ys)
+                self._line2, = self.ax2.plot(xs, ys_opt)
+                self._line1.figure.canvas.draw()
+                self._line2.figure.canvas.draw()
+            y, y_opt, val, val_opt = run(net, net_opt, data_train_file, data_test_file, alfa, test=True)
+            ys.append(y)
+            ys_opt.append(y_opt)
+            xs = range(iters)
+            self._line1, = self.ax1.plot(xs, ys)
+            self._line2, = self.ax2.plot(xs, ys_opt)
+            self._line1.figure.canvas.draw()
+            self._line2.figure.canvas.draw()
+
         else:
             self.ax1 = self.common_canvas.figure.subplots()
-            t = np.linspace(0, 10, 101)
-            self._line1, = self.ax1.plot(t, np.sin(t + time.time()))
-            self._line2, = self.ax1.plot(t, np.cos(t + time.time()))
-            self._timer_common = self.common_canvas.new_timer(1000)
-            self._timer_common.add_callback(self._update_canvas_common)
-            self._timer_common.start()
-
-    def _update_canvas(self):
-        t = np.linspace(0, 10, 101)
-        self._line1.set_data(t, np.sin(t + time.time()))
-        self._line1.figure.canvas.draw()
-
-    def _update_canvas2(self):
-        t = np.linspace(0, 10, 101)
-        self._line2.set_data(t, np.cos(t + time.time()))
-        self._line2.figure.canvas.draw()
-
-    def _update_canvas_common(self):
-        t = np.linspace(0, 10, 101)
-        self._line1.set_data(t, np.sin(t + time.time()))
-        self._line2.set_data(t, np.cos(t + time.time()))
-        self._line1.figure.canvas.draw()
-        self._line2.figure.canvas.draw()
+            for i in range(1, iters):
+                xs = range(i)
+                y, y_opt, val, val_opt = run(net, net_opt, data_train_file, data_test_file, alfa)
+                ys.append(y)
+                ys_opt.append(y_opt)
+                self._line1, = self.ax1.plot(xs, ys)
+                self._line2, = self.ax1.plot(xs, ys_opt)
+                self._line1.figure.canvas.draw()
+                self._line2.figure.canvas.draw()
+            y, y_opt, val, val_opt = run(net, net_opt, data_train_file, data_test_file, alfa, test=True)
+            ys.append(y)
+            ys_opt.append(y_opt)
+            xs = range(iters)
+            self._line1, = self.ax1.plot(xs, ys)
+            self._line2, = self.ax1.plot(xs, ys_opt)
+            # self._line1.set_data(t, np.sin(t + time.time()))
+            self._line1.figure.canvas.draw()
+            self._line2.figure.canvas.draw()
 
     def create_graphs(self):
         self.side_by_side_change()
@@ -137,16 +170,11 @@ class Ui_MainWindow(object):
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
 
-        self.lineEdit = QLineEdit(self.centralwidget)
-        self.lineEdit.setObjectName(u"lineEdit")
-        self.lineEdit.setGeometry(QRect(10, 10, 60, 25))
+        self.itersLineEdit = QLineEdit(self.centralwidget)
+        self.itersLineEdit.setObjectName(u"itersLineEdit")
+        self.itersLineEdit.setGeometry(QRect(10, 10, 60, 25))
         validator = QIntValidator(1, 1000)
-        self.lineEdit.setValidator(validator)
-
-        self.pushButton = QPushButton(self.centralwidget)
-        self.pushButton.setObjectName(u"pushButton")
-        self.pushButton.setGeometry(QRect(80, 10, 60, 25))
-        self.pushButton.clicked.connect(self.on_click_go)
+        self.itersLineEdit.setValidator(validator)
 
         self.startButton = QPushButton(self.centralwidget)
         self.startButton.setObjectName(u"startButton")
@@ -185,7 +213,6 @@ class Ui_MainWindow(object):
 
         # self.horizontalLayout.addWidget(NavigationToolbar(dual_canvas1, self))
 
-
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
@@ -196,12 +223,9 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
 #if QT_CONFIG(tooltip)
-        self.lineEdit.setToolTip(QCoreApplication.translate("MainWindow", u"Hello", None))
+        self.itersLineEdit.setToolTip(QCoreApplication.translate("MainWindow", u"Hello", None))
 #endif // QT_CONFIG(tooltip)
-        self.lineEdit.setText(QCoreApplication.translate("MainWindow", u"10", None))
-        self.pushButton.setText(QCoreApplication.translate("MainWindow", u"Go", None))
+        self.itersLineEdit.setText(QCoreApplication.translate("MainWindow", u"10", None))
         self.startButton.setText(QCoreApplication.translate("MainWindow", u"Start", None))
         self.btn_reset.setText(QCoreApplication.translate("MainWindow", u"Reset", None))
         self.chb_side_by_side.setText(QCoreApplication.translate("MainWindow", u"Side by side", None))
-    # retranslateUi
-
