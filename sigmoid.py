@@ -1,15 +1,14 @@
-import numpy as np  # import numpy library
+import numpy as np
 
 
 class Sigmoid:
-    def __init__(self, shape=None):
-        self.dx = None
-        self.old_y = np.zeros(shape) if shape else None
+    def __init__(self):
+        self.y = None
 
     def forward(self, x):
-        self.old_y = np.exp(x) / (1. + np.exp(x))
-        return self.old_y
+        x = np.clip(x, a_min=None, a_max=709)
+        self.y = np.exp(x) / (1. + np.exp(x))
+        return self.y
 
-    def backward(self, upstream_grad):
-        self.dx = upstream_grad * self.old_y * (1. - self.old_y)
-        return self.dx
+    def backward(self, grad):
+        return grad * self.y * (1. - self.y)

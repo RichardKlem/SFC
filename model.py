@@ -16,5 +16,5 @@ class Model:
 
     def backward(self):
         grad = self.cost.backward()
-        for i in range(len(self.layers) - 1, -1, -1):
+        for i in reversed(range(len(self.layers))):
             grad = self.layers[i].backward(grad)
