@@ -14,3 +14,6 @@ Approach inspiration was taken from https://github.com/sgugger/Deep-Learning
 # Run
 Run the script `run.sh`.<br>
 If it fails, enter each line at the time of that script manually.
+
+# Data licensing
+Usage of compressed or other data present in this repository must follow proper related licenses.
